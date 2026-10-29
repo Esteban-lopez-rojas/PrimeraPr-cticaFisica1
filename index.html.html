@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Detección y frenado antes de un obstáculo</title>
+<style>
+:root{--bg:#F6F8FB;--card:#fff;--ink:#1D2433;--mut:#586174;--line:#D9DEE7;--acc:#1F78B4;--base:#E4572E;--ok:#2BA84A;--no:#D62839;--soft:#EEF2F8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E131B;--card:#171E2A;--ink:#E7ECF4;--mut:#9AA6B8;--line:#2A3446;--soft:#1F2837}}
+:root[data-theme="dark"]{--bg:#0E131B;--card:#171E2A;--ink:#E7ECF4;--mut:#9AA6B8;--line:#2A3446;--soft:#1F2837}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 16px 40px}
+header{background:#27303F;color:#F2F4F8;border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:18px}
+header h1{margin:0 0 6px;font-size:clamp(24px,4.4vw,38px);line-height:1.15}
+header p{margin:2px 0;color:#B9C3D3}
+.q{margin-top:12px;background:rgba(255,255,255,.08);border-left:4px solid #8FA3BF;border-radius:8px;padding:10px 14px;font-weight:600}
+section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:18px}
+h2{margin:0 0 10px;font-size:21px}
+.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 20px;margin-bottom:12px}
+.ctrl label{font-size:14px;color:var(--mut)}.ctrl b{color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+button,select{font:inherit;font-size:15px;border-radius:10px;padding:8px 16px;border:1px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer}
+button.p{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.stage{background:#fff;color:#1D2433;border-radius:12px;overflow:hidden}
+canvas{display:block;width:100%;height:auto}
+.rd{font-family:ui-monospace,Consolas,monospace;font-size:13px;color:var(--mut);margin:8px 0 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.kc{background:var(--soft);border-radius:12px;padding:10px 12px}.kc small{color:var(--mut);display:block;font-size:12px}.kc strong{font-size:20px}
+.ver{font-weight:700;border-radius:10px;padding:6px 12px;color:#fff;display:inline-block;margin-top:4px;font-size:14px}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-size:13px}
+td.n{font-family:ui-monospace,Consolas,monospace;white-space:nowrap}
+.cb{color:var(--base);font-weight:700}.cm{color:var(--acc);font-weight:700}
+ul{margin:6px 0 0;padding-left:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Detección y frenado antes de un obstáculo</h1>
+  <p>FUN-01 Física I · Universidad CENFOTEC · C3-2026 · Grupo 6</p>
+  <p>Esteban Kastev López Rojas · Docente: Edwin Quesada Solano</p>
+  <div class="q">¿Puede detenerse el vehículo antes del obstáculo y qué mejora reduciría el riesgo?</div>
+</header>
+
+<section>
+  <h2>Simulación animada</h2>
+  <p style="margin:0 0 12px;color:var(--mut)">Vehículo de 650 kg que detecta un obstáculo a 24 m. Fase 1: procesa la señal a velocidad constante. Fase 2: frena con desaceleración constante. Mueve los deslizadores y pulsa ▶.</p>
+  <div class="btns">
+    <button id="bP" class="p">▶ Reproducir</button><button id="bR">↻ Reiniciar animación</button><button id="bD">Valores del problema</button>
+    <label style="font-size:14px;color:var(--mut)">Velocidad <select id="sp"><option value=".25">0,25×</option><option value=".5" selected>0,5×</option><option value="1">1×</option><option value="2">2×</option></select></label>
+  </div>
+  <div class="ctrl">
+    <label>v₀ = <b id="o0"></b> km/h<input id="s0" type="range" min="10" max="60" step="1" value="36"></label>
+    <label>|a| = <b id="o1"></b> m/s²<input id="s1" type="range" min="1.5" max="8" step="0.1" value="3.5"></label>
+    <label style="color:var(--base)">t_r base = <b id="o2"></b> s<input id="s2" type="range" min="0.05" max="1.2" step="0.01" value="0.6"></label>
+    <label style="color:var(--acc)">t_r mejora = <b id="o3"></b> s<input id="s3" type="range" min="0.05" max="1.2" step="0.01" value="0.3"></label>
+  </div>
+  <div class="stage"><canvas id="cv"></canvas></div>
+  <p class="rd" id="live"></p>
+  <div class="cards" id="cards"></div>
+</section>
+
+<section>
+  <h2>Desarrollo matemático (se recalcula con los deslizadores)</h2>
+  <div class="sc"><table>
+    <thead><tr><th>Magnitud</th><th>Ecuación</th><th class="cb">Base</th><th class="cm">Mejora</th></tr></thead>
+    <tbody id="tb"></tbody>
+  </table></div>
+  <p class="rd">Eje x en la dirección del movimiento, origen en el punto de detección; el obstáculo está en x = 24 m. Margen mínimo M = 2,0 m.</p>
+</section>
+
+<section>
+  <h2>Conclusión y recomendación técnica</h2>
+  <p><b>¿Se detiene antes del obstáculo?</b> Sí. Con los datos originales recorre 6,0 m procesando y 14,3 m frenando (20,3 m en total) y queda a 3,7 m del obstáculo, por encima del margen de 2,0 m. La holgura es de solo 1,7 m.</p>
+  <p><b>Mejora:</b> bajar el tiempo de procesamiento de 0,60 s a 0,30 s deja el espacio restante en 6,7 m (+3,0 m) sin tocar los frenos, porque d_f depende solo de v₀ y |a|. El margen deja de cumplirse a partir de t_r ≈ 0,77 s, así que el sistema actual opera cerca del límite.</p>
+  <p><b>Limitaciones:</b></p>
+  <ul><li>Desaceleración constante y vehículo como partícula.</li><li>Carretera horizontal y seca, sin resistencia del aire.</li><li>Tiempo de procesamiento fijo; no se modela la subida de presión de frenado.</li></ul>
+</section>
+</div>
+
+<script>
+(function(){
+const D=24,M=2,MASS=650,DEF=[36,3.5,0.6,0.3];
+const C={b:"#E4572E",m:"#1F78B4",ok:"#2BA84A",no:"#D62839",pr:"#F4B942",fr:"#EF476F",tx:"#1D2433",gr:"#D9DEE7",wa:"#E67E22"};
+const $=i=>document.getElementById(i),cv=$("cv"),ctx=cv.getContext("2d");
+const W=1000,H=620,DPR=Math.max(1,window.devicePixelRatio||1);
+cv.width=W*DPR;cv.height=H*DPR;ctx.scale(DPR,DPR);
+const P={v:10,a:3.5,tb:.6,tm:.3},S={t:0,on:false,last:null,sp:.5};
+let MB,MM,TE,XM;
+const mod=tr=>{const v=P.v,a=P.a,tf=v/a,dr=v*tr,df=v*v/(2*a);return{tr,tf,dr,df,dt:dr+df,re:D-dr-df,tt:tr+tf,ok:D-dr-df>=M}};
+const st=(m,t)=>{const v=P.v,a=P.a;if(t<=m.tr)return{x:v*t,v:v,p:0};const u=t-m.tr;return u<=m.tf?{x:m.dr+v*u-.5*a*u*u,v:v-a*u,p:1}:{x:m.dt,v:0,p:2}};
+const L=70,R=W-40,wx=x=>L+(x+3)/(XM+3)*(R-L);
+const lanes=[{y:70,h:120,n:"BASE",c:C.b,g:()=>MB},{y:205,h:120,n:"MEJORA",c:C.m,g:()=>MM}];
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function car(xm,yb,col,br){const w=wx(xm)-wx(xm-2.6),x=wx(xm)-w,h=44,y=yb-h-8;
+ ctx.fillStyle=col;rr(x,y,w,h,10);ctx.fill();ctx.lineWidth=2;ctx.strokeStyle="#0F3F63";ctx.stroke();
+ ctx.fillStyle="#BFE3FF";rr(x+w*.62,y+8,w*.22,18,3);ctx.fill();ctx.lineWidth=1;ctx.stroke();
+ ctx.fillStyle=br?"#FF2B2B":"#5A0F1B";ctx.fillRect(x,y+12,6,20);
+ if(br){ctx.fillStyle="rgba(255,43,43,.25)";ctx.fillRect(x-14,y+8,14,28)}
+ [x+w*.22,x+w*.78].forEach(c=>{ctx.beginPath();ctx.arc(c,yb-8,9,0,6.283);ctx.fillStyle="#1D2433";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.stroke()});
+ return{x,y,w}}
+function lane(l,t){const m=l.g(),s=st(m,t),yb=l.y+l.h-6;
+ ctx.fillStyle="#EEF1F6";ctx.fillRect(L-20,l.y,R-L+40,l.h);ctx.fillStyle="#3A4150";ctx.fillRect(L-20,yb-2,R-L+40,8);
+ ctx.fillStyle="rgba(230,126,34,.2)";ctx.fillRect(wx(D-M),l.y,wx(D)-wx(D-M),l.h-8);
+ ctx.strokeStyle=C.wa;ctx.setLineDash([6,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(wx(D-M),l.y);ctx.lineTo(wx(D-M),yb-2);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle=C.no;ctx.fillRect(wx(D),l.y+4,18,l.h-14);ctx.strokeStyle="#7A0F1B";ctx.lineWidth=1.5;ctx.strokeRect(wx(D),l.y+4,18,l.h-14);
+ ctx.strokeStyle=C.tx;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(wx(0),l.y);ctx.lineTo(wx(0),yb-2);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle=C.pr;ctx.fillRect(wx(0),yb+1,wx(Math.min(s.x,m.dr))-wx(0),5);
+ if(s.x>m.dr){ctx.fillStyle=C.fr;ctx.fillRect(wx(m.dr),yb+1,wx(s.x)-wx(m.dr),5)}
+ const gw=wx(-.4)-wx(-3);ctx.strokeStyle="rgba(29,36,51,.5)";ctx.setLineDash([5,4]);ctx.lineWidth=1.2;ctx.strokeRect(wx(m.dt)-gw,yb-52,gw,44);ctx.setLineDash([]);
+ const cb=car(Math.min(s.x,D+1.5),yb,l.c,s.p===1);
+ ctx.font="bold 12px system-ui,Arial";ctx.fillStyle=C.tx;ctx.textAlign="center";
+ ctx.fillText(s.x>=D?"¡Impacto!":(s.p===0?"Detectando y procesando…":(s.p===1?"Frenando":"Detenido")),cb.x+cb.w/2,cb.y-8);
+ ctx.textAlign="left";ctx.font="bold 13px system-ui,Arial";ctx.fillStyle=l.c;ctx.fillText(l.n+" · t_r = "+m.tr.toFixed(2)+" s",L-14,l.y+16);
+ if(s.p===2||s.x>D){const col=m.ok?C.ok:(m.re>0?C.wa:C.no),tx=m.ok?"CUMPLE ✔  quedan "+m.re.toFixed(2)+" m":(m.re>0?"NO CUMPLE ✘  quedan "+m.re.toFixed(2)+" m":"COLISIÓN ✘  se pasa "+(-m.re).toFixed(2)+" m");
+  ctx.font="bold 13px system-ui,Arial";const tw=ctx.measureText(tx).width+20;ctx.fillStyle=col;rr(R-tw,l.y+6,tw,26,8);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.fillText(tx,R-tw/2,l.y+24)}}
+function chart(t){const cx=L,cy=385,cw=R-L,ch=190,tx=u=>cx+u/TE*cw,vy=v=>cy+ch-v/(P.v*1.12)*ch;
+ ctx.font="bold 13px system-ui,Arial";ctx.fillStyle=C.tx;ctx.textAlign="left";ctx.fillText("Velocidad en función del tiempo",cx,cy-12);
+ ctx.fillStyle="rgba(244,185,66,.18)";ctx.fillRect(tx(0),cy,tx(MB.tr)-tx(0),ch);ctx.fillStyle="rgba(239,71,111,.1)";ctx.fillRect(tx(MB.tr),cy,tx(MB.tt)-tx(MB.tr),ch);
+ ctx.strokeStyle=C.gr;ctx.lineWidth=1;ctx.fillStyle=C.tx;ctx.font="11px system-ui,Arial";ctx.textAlign="right";
+ const vm=P.v*1.12,sv=vm>12?4:2;for(let v=0;v<=vm;v+=sv){const y=vy(v);ctx.beginPath();ctx.moveTo(cx,y);ctx.lineTo(cx+cw,y);ctx.stroke();ctx.fillText(v.toFixed(0),cx-6,y+4)}
+ ctx.textAlign="center";const sT=TE>8?2:(TE>4?1:.5);for(let u=0;u<=TE;u+=sT){ctx.beginPath();ctx.moveTo(tx(u),cy);ctx.lineTo(tx(u),cy+ch);ctx.stroke();ctx.fillText(u.toFixed(sT<1?1:0),tx(u),cy+ch+15)}
+ ctx.fillText("t (s)",cx+cw/2,cy+ch+32);
+ [[MB,C.b],[MM,C.m]].forEach(([m,c])=>{const pts=[[0,P.v],[m.tr,P.v],[m.tt,0],[TE,0]];
+  ctx.strokeStyle=c;ctx.globalAlpha=.25;ctx.lineWidth=2.5;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(tx(p[0]),vy(p[1])):ctx.moveTo(tx(p[0]),vy(p[1])));ctx.stroke();ctx.globalAlpha=1;
+  ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(tx(0),vy(P.v));const n=Math.max(2,Math.floor(t/.02));for(let i=1;i<=n;i++){const u=i*t/n;ctx.lineTo(tx(u),vy(st(m,u).v))}ctx.stroke();
+  ctx.beginPath();ctx.arc(tx(t),vy(st(m,t).v),6,0,6.283);ctx.fillStyle=c;ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke()});
+ ctx.textAlign="left";ctx.font="bold 12px system-ui,Arial";ctx.fillStyle=C.b;ctx.fillText("● Base",cx+cw-150,cy+16);ctx.fillStyle=C.m;ctx.fillText("● Mejora",cx+cw-80,cy+16)}
+function frame(){const t=Math.min(S.t,TE);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+ ctx.font="bold 12px system-ui,Arial";ctx.fillStyle="#586174";ctx.textAlign="left";ctx.fillText("detección x = 0",wx(0)-30,lanes[0].y-6);ctx.fillText("margen 2,0 m",wx(D-M)-100,lanes[0].y-6);ctx.fillText("OBSTÁCULO",wx(D)-18,lanes[0].y-6);
+ lanes.forEach(l=>lane(l,t));chart(t);const a=st(MB,t),b=st(MM,t);
+ $("live").textContent="t = "+t.toFixed(2)+" s  ·  Base: x = "+a.x.toFixed(2)+" m, v = "+a.v.toFixed(2)+" m/s  ·  Mejora: x = "+b.x.toFixed(2)+" m, v = "+b.v.toFixed(2)+" m/s"}
+function loop(ts){if(!S.on){S.last=null;return}if(S.last===null)S.last=ts;S.t+=(ts-S.last)/1000*S.sp;S.last=ts;
+ if(S.t>=TE){S.t=TE;S.on=false;$("bP").textContent="▶ Reproducir"}frame();if(S.on)requestAnimationFrame(loop)}
+function play(on){S.on=on;$("bP").textContent=on?"⏸ Pausar":"▶ Reproducir";if(on){if(S.t>=TE)S.t=0;S.last=null;requestAnimationFrame(loop)}}
+function recalc(){MB=mod(P.tb);MM=mod(P.tm);TE=Math.max(MB.tt,MM.tt)+.8;XM=Math.max(D,MB.dt,MM.dt)+4}
+const f=(x,d)=>x.toFixed(d).replace(".",",");
+function ui(){
+ const tmax=(D-M-MB.df)/P.v,K=.5*MASS*P.v*P.v,F=MASS*P.a;
+ const vd=m=>'<span class="ver" style="background:'+(m.ok?C.ok:(m.re>0?C.wa:C.no))+'">'+(m.ok?"CUMPLE ✔":(m.re>0?"NO CUMPLE ✘":"COLISIÓN ✘"))+"</span>";
+ $("cards").innerHTML=[["Base · espacio restante",f(MB.re,2)+" m",vd(MB)],["Mejora · espacio restante",f(MM.re,2)+" m",vd(MM)],["Fuerza neta media",f(F,0)+" N",""],["Energía cinética inicial",f(K,0)+" J",""],["t_r máximo que cumple",tmax>0?f(tmax,2)+" s":"no existe",""]].map(c=>'<div class="kc"><small>'+c[0]+"</small><strong>"+c[1]+"</strong><br>"+c[2]+"</div>").join("");
+ const r=[["Velocidad inicial","v₀ = v₀(km/h) · 1000/3600",f(P.v,2)+" m/s",f(P.v,2)+" m/s"],
+ ["Dist. de procesamiento","d_r = v₀ · t_r",f(MB.dr,2)+" m",f(MM.dr,2)+" m"],
+ ["Tiempo de frenado","t_f = v₀ / |a|",f(MB.tf,2)+" s",f(MM.tf,2)+" s"],
+ ["Distancia de frenado","d_f = v₀² / (2|a|)",f(MB.df,2)+" m",f(MM.df,2)+" m"],
+ ["Distancia total","d_total = d_r + d_f",f(MB.dt,2)+" m",f(MM.dt,2)+" m"],
+ ["Espacio restante","D − d_total",f(MB.re,2)+" m",f(MM.re,2)+" m"],
+ ["¿Cumple el margen?","D − d_total ≥ M (2,0 m)",MB.ok?"Sí":"No",MM.ok?"Sí":"No"],
+ ["Fuerza neta media","|ΣF| = m · |a|",f(F,0)+" N",f(F,0)+" N"],
+ ["Energía cinética inicial","K_i = ½ m v₀²",f(K,0)+" J",f(K,0)+" J"],
+ ["Trabajo neto de frenado","W_neto = −K_i",f(-K,0)+" J",f(-K,0)+" J"],
+ ["t_r máximo","(D − M − d_f) / v₀",tmax>0?f(tmax,2)+" s":"no existe","—"]];
+ $("tb").innerHTML=r.map(x=>"<tr><td>"+x[0]+'</td><td class="n">'+x[1]+'</td><td class="n">'+x[2]+'</td><td class="n">'+x[3]+"</td></tr>").join("")}
+function upd(){P.v=+$("s0").value/3.6;P.a=+$("s1").value;P.tb=+$("s2").value;P.tm=+$("s3").value;
+ $("o0").textContent=$("s0").value;$("o1").textContent=P.a.toFixed(1);$("o2").textContent=P.tb.toFixed(2);$("o3").textContent=P.tm.toFixed(2);
+ recalc();S.t=0;play(false);frame();ui()}
+["s0","s1","s2","s3"].forEach(i=>$(i).oninput=upd);
+$("bP").onclick=()=>play(!S.on);$("bR").onclick=()=>{play(false);S.t=0;frame()};
+$("sp").onchange=e=>{S.sp=+e.target.value};
+$("bD").onclick=()=>{["s0","s1","s2","s3"].forEach((i,k)=>$(i).value=DEF[k]);upd()};
+upd();
+})();
+</script>
+</body>
+</html>
